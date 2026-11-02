@@ -764,8 +764,8 @@ export function VideoStage({ src }: { src: string }) {
               flipEnabled={false}
               anchorSize={16}
               anchorCornerRadius={8}
-              anchorStroke="#2f81f7"
-              borderStroke="#2f81f7"
+              anchorStroke="#e0435c"
+              borderStroke="#e0435c"
               padding={4}
               ignoreStroke
               onTransformStart={ed.beginChange}
