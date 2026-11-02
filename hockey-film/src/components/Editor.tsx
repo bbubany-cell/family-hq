@@ -14,6 +14,11 @@ import { Toolbar } from './Toolbar';
 import { Inspector } from './Inspector';
 import { HelpOverlay } from './HelpOverlay';
 import { Icon } from './Icon';
+import { ExportResult, type ExportFile } from './ExportResult';
+import { ExportClipModal } from './ExportClipModal';
+import { exportFramePNG } from '../lib/exporter';
+import { fileSafe } from '../lib/saveFile';
+import { fmtTime } from '../lib/util';
 
 const isNarrow = () => window.innerWidth < 1000;
 
@@ -21,6 +26,34 @@ export function Editor({ project, src, focus, onExit }: { project: Project; src:
   const [panelOpen, setPanelOpen] = useState(!isNarrow());
   const [help, setHelp] = useState(false);
   const [clearMenu, setClearMenu] = useState(false);
+  const [exportMenu, setExportMenu] = useState(false);
+  const [exportFile, setExportFile] = useState<ExportFile | null>(null);
+  const [clipExport, setClipExport] = useState<{ start: number; end: number } | null>(null);
+
+  /** The project as it is right now (drawings live in the editor store until autosave). */
+  const liveProject = (): Project => {
+    const ed = useEditor.getState();
+    return { ...(ed.project ?? project), shapes: ed.shapes, layers: ed.layers, stops: ed.stops, fps: usePlayer.getState().fps };
+  };
+  const exportFrame = async () => {
+    setExportMenu(false);
+    const v = getVideo();
+    if (!v) return;
+    v.pause();
+    const t = v.currentTime;
+    const blob = await exportFramePNG(liveProject(), v, t);
+    setExportFile({ blob, filename: `${fileSafe(liveProject().name)} ${fmtTime(t).replace(/[:.]/g, '-')}.png` });
+  };
+  const exportRange = () => {
+    setExportMenu(false);
+    const { loop } = usePlayer.getState();
+    if (loop.in === null || loop.out === null) {
+      alert('Set In and Out on the timeline first (I / O), then export.');
+      return;
+    }
+    getVideo()?.pause();
+    setClipExport({ start: loop.in, end: loop.out });
+  };
   const ready = usePlayer((s) => s.ready);
   const name = useEditor((s) => s.project?.name ?? '');
   const save = useSaveStatus();
@@ -107,6 +140,15 @@ export function Editor({ project, src, focus, onExit }: { project: Project; src:
         </span>
         <div className="spacer" />
         <div className="menu-wrap">
+          <button className="btn" onClick={() => setExportMenu((m) => !m)}><Icon name="export" size={18} /> Export</button>
+          {exportMenu && (
+            <div className="menu" onMouseLeave={() => setExportMenu(false)}>
+              <button onClick={exportFrame}>This frame as image (PNG)</button>
+              <button onClick={exportRange}>In → Out as video</button>
+            </div>
+          )}
+        </div>
+        <div className="menu-wrap">
           <button className="btn" onClick={() => setClearMenu((m) => !m)}>Clear</button>
           {clearMenu && (
             <div className="menu" onMouseLeave={() => setClearMenu(false)}>
@@ -134,6 +176,17 @@ export function Editor({ project, src, focus, onExit }: { project: Project; src:
 
       <Transport />
       {help && <HelpOverlay onClose={() => setHelp(false)} />}
+      {exportFile && <ExportResult file={exportFile} onClose={() => setExportFile(null)} />}
+      {clipExport && (
+        <ExportClipModal
+          project={liveProject()}
+          src={src}
+          start={clipExport.start}
+          end={clipExport.end}
+          name={`${liveProject().name} ${fmtTime(clipExport.start, false)}`}
+          onClose={() => setClipExport(null)}
+        />
+      )}
     </div>
   );
 }

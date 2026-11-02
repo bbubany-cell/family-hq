@@ -49,6 +49,10 @@ const P: Record<string, string> = {
   up: 'M12 19V5M6 11l6-6 6 6',
   down: 'M12 5v14M6 13l6 6 6-6',
   copy: 'M8 8h12v12H8zM4 16V4h12',
+  share: 'M12 3v12M8 7l4-4 4 4M5 12v8h14v-8',
+  export: 'M12 15V3M8 7l4-4 4 4M4 14v6h16v-6',
+  backup: 'M7 18a5 5 0 01-.5-10A6 6 0 0118 9a4.5 4.5 0 01-1 9zM12 10v7M9 13l3-3 3 3',
+  image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01',
   teach: 'M4 5h16v10H4zM8 19h8M12 15v4M10 8l4 2-4 2z',
 };
 

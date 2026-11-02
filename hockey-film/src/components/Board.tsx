@@ -12,6 +12,9 @@ import { partialPath } from '../lib/track';
 import { saveDrill } from '../db/db';
 import { uid } from '../lib/util';
 import { Icon } from './Icon';
+import { ExportResult, type ExportFile } from './ExportResult';
+import { pickVideoMime } from '../lib/exporter';
+import { fileSafe } from '../lib/saveFile';
 
 type BoardTool = 'move' | PieceKind | RouteKind | 'erase';
 
@@ -34,6 +37,10 @@ export function Board({ initial, onExit }: { initial: Drill; onExit: () => void 
   const boxRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const [exportMenu, setExportMenu] = useState(false);
+  const [exportFile, setExportFile] = useState<ExportFile | null>(null);
+  const [recording, setRecording] = useState(false);
+  const playingRef = useRef(false);
 
   /** Apply an undoable change. */
   const dRef = useRef(d);
@@ -78,6 +85,7 @@ export function Board({ initial, onExit }: { initial: Drill; onExit: () => void 
   const oy = (size.h - RINK.W * s) / 2;
   const toFt = (px: number, py: number) => ({ x: (px - ox) / s, y: (py - oy) / s });
 
+  playingRef.current = playing;
   // ---- playback ----
   const total = Math.max(0, (d.steps.length - 1) * d.stepTime);
   useEffect(() => {
@@ -225,6 +233,56 @@ export function Board({ initial, onExit }: { initial: Drill; onExit: () => void 
     setStep((k) => Math.max(0, Math.min(k, d.steps.length - 2)));
   };
 
+  // ---- exports ----
+  const nextFrame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const exportImage = async () => {
+    setExportMenu(false);
+    setSel(null);
+    await nextFrame();
+    const blob = await new Promise<Blob>((res, rej) =>
+      stageRef.current!.toBlob({ pixelRatio: 2, mimeType: 'image/png', callback: (b) => (b ? res(b) : rej(new Error('Could not create image'))) }),
+    );
+    setExportFile({ blob, filename: `${fileSafe(d.name)} step ${(frame?.step ?? step) + 1}.png` });
+  };
+  const exportVideo = async () => {
+    setExportMenu(false);
+    const fmt = pickVideoMime();
+    if (!fmt) return alert("This browser can't record video. Try Safari or Chrome.");
+    if (d.steps.length < 2) return alert('Add at least 2 steps (draw a route from a player) to make a video.');
+    setSel(null);
+    setPlaying(false);
+    setTau(0);
+    setRecording(true);
+    await nextFrame();
+    const layer = stageRef.current!.getLayers()[0];
+    const canvas = layer.getNativeCanvasElement();
+    const stream = canvas.captureStream(30);
+    const rec = new MediaRecorder(stream, { mimeType: fmt.mime, videoBitsPerSecond: 6_000_000 });
+    const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    const stopped = new Promise<void>((r) => (rec.onstop = () => r()));
+    // Hold a frame (keep repainting so the recorder gets frames), for `ms`.
+    const holdFor = (ms: number) => new Promise<void>((r) => {
+      const t0 = performance.now();
+      const tick = () => { layer.draw(); if (performance.now() - t0 >= ms) r(); else requestAnimationFrame(tick); };
+      tick();
+    });
+    rec.start(250);
+    await holdFor(700);
+    setPlaying(true);
+    await new Promise<void>((r) => {
+      const wait = () => (playingRef.current ? requestAnimationFrame(wait) : r()); // until playback finishes
+      requestAnimationFrame(() => requestAnimationFrame(wait));
+    });
+    await holdFor(1200);
+    rec.stop();
+    await stopped;
+    stream.getTracks().forEach((t) => t.stop());
+    setRecording(false);
+    setTau(null);
+    setExportFile({ blob: new Blob(chunks, { type: fmt.mime.split(';')[0] }), filename: `${fileSafe(d.name)}.${fmt.ext}` });
+  };
+
   const routesToShow = d.steps[showStep]?.routes ?? [];
   const prevRoutes = !frame && step > 0 ? d.steps[step - 1].routes : [];
 
@@ -238,6 +296,15 @@ export function Board({ initial, onExit }: { initial: Drill; onExit: () => void 
           {(Object.keys(VIEWS) as BoardView[]).map((k) => (
             <button key={k} className={d.view === k ? 'active' : ''} onClick={() => commit({ ...d, view: k })}>{VIEWS[k].label}</button>
           ))}
+        </div>
+        <div className="menu-wrap">
+          <button className="btn" onClick={() => setExportMenu((m) => !m)} disabled={recording}><Icon name="export" size={18} /> Export</button>
+          {exportMenu && (
+            <div className="menu" onMouseLeave={() => setExportMenu(false)}>
+              <button onClick={exportImage}>Image of this step (PNG)</button>
+              <button onClick={exportVideo}>Video of the play</button>
+            </div>
+          )}
         </div>
         <button className="btn icon ghost" onClick={undo} disabled={!past.length} aria-label="Undo"><Icon name="undo" /></button>
         <button className="btn icon ghost" onClick={redo} disabled={!future.length} aria-label="Redo"><Icon name="redo" /></button>
@@ -275,6 +342,8 @@ export function Board({ initial, onExit }: { initial: Drill; onExit: () => void 
               onPointerCancel={onUp}
             >
               <Layer>
+                {/* Solid background so exported images/videos aren't transparent around the rink. */}
+                <Rect width={size.w} height={size.h} fill="#0f1722" listening={false} />
                 <Group x={ox} y={oy} scaleX={s} scaleY={s}>
                   <RinkMarkings />
                   {prevRoutes.map((r) => <RouteNode key={'p' + r.id} r={r} opacity={0.22} />)}
@@ -304,10 +373,19 @@ export function Board({ initial, onExit }: { initial: Drill; onExit: () => void 
                     );
                   })}
                 </Group>
+                {/* Step note caption, drawn on the canvas so it's in exported videos too. */}
+                {frame && d.steps[frame.step]?.note && (
+                  <Group listening={false}>
+                    <Rect x={0} y={size.h - 52} width={size.w} height={52} fill="rgba(10,14,20,0.82)" />
+                    <Text x={12} y={size.h - 52} width={size.w - 24} height={52} text={d.steps[frame.step].note} align="center" verticalAlign="middle"
+                      fontSize={20} fontStyle="bold" fill="#fff" fontFamily="system-ui, -apple-system, sans-serif" />
+                  </Group>
+                )}
               </Layer>
             </Stage>
           )}
-          {frame && d.steps[frame.step]?.note && <div className="board-caption">{d.steps[frame.step].note}</div>}
+          {recording && <div className="board-recording"><span className="rec-dot" /> Recording the play…</div>}
+          {exportFile && <ExportResult file={exportFile} onClose={() => setExportFile(null)} />}
           {d.pieces.length === 0 && tau === null && (
             <div className="board-hint">Pick O / X on the left and tap the ice to place players. Then draw routes starting on a player to make him skate.</div>
           )}

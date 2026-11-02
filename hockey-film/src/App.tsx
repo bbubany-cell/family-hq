@@ -6,6 +6,7 @@ import { Compare, type ClipSource } from './components/Compare';
 import { Present } from './components/Present';
 import { Board } from './components/Board';
 import { RelinkModal } from './components/RelinkModal';
+import { ExportClipModal } from './components/ExportClipModal';
 import { getProject, requestPersistentStorage } from './db/db';
 import { ensureUrl } from './lib/videoAccess';
 import { useLibrary } from './store/libraryStore';
@@ -31,6 +32,7 @@ export function App() {
   const [route, setRoute] = useState<Route>({ screen: 'library' });
   const [tab, setTabState] = useState<Tab>(readTab);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState<ClipSource | null>(null);
   const setTab = (t: Tab) => {
     setTabState(t);
     try { localStorage.setItem(TAB_KEY, t); } catch { /* private mode */ }
@@ -75,6 +77,10 @@ export function App() {
       if (s && s.length) setRoute({ screen: 'present', items: s });
     },
     openDrill: (drill) => setRoute({ screen: 'board', drill }),
+    exportClip: async (clip) => {
+      const s = await sources([clip]);
+      if (s?.[0]) setExporting(s[0]);
+    },
   };
 
   const home = () => setRoute({ screen: 'library' });
@@ -87,6 +93,16 @@ export function App() {
       {route.screen === 'present' && <Present items={route.items} onExit={home} />}
       {route.screen === 'board' && <Board key={route.drill.id} initial={route.drill} onExit={home} />}
       {busy && <div className="busy">Loading clips…</div>}
+      {exporting && (
+        <ExportClipModal
+          project={exporting.project}
+          src={exporting.src}
+          start={exporting.clip.start}
+          end={exporting.clip.end}
+          name={exporting.clip.name}
+          onClose={() => setExporting(null)}
+        />
+      )}
       <RelinkModal />
     </>
   );

@@ -80,6 +80,20 @@ Everything tracked rides along during playback: spotlights, rings, tags, arrows,
   moves the puck, and a carry brings the puck along. Add steps, add a note per step, and hit play: everyone
   skates their routes. Drills autosave and can be duplicated for variations.
 
+## Phase 4: export & backup
+
+- **Backup & restore** (home screen, top right): one small file with every video's drawings, tracking, clips,
+  playlists and drills. Save it to Files/iCloud or share it (AirDrop, Mail). **Restore** merges: anything missing is
+  added and anything older is updated; nothing is deleted. The button turns orange if it's been a week (or never).
+  Videos aren't in the backup; after restoring on a new device, open each video once to point it at its file.
+- **Export one video's work:** the export icon on a video card gives a single-game file (drawings + clips) for an
+  assistant coach or another device. Restore it the same way.
+- **Frame → PNG:** editor → Export → *This frame as image*. Full video resolution with all drawings burned in.
+- **Clip → video:** editor → Export → *In → Out as video*, or the export icon on any clip in the Clips tab.
+  Drawings, spotlights and tracking are burned in. Options: normal or slow-mo, a 2–4s freeze at each teaching stop,
+  1080p/720p. It records in real time, so keep the app on screen. MP4 on Safari/iPad (and recent Chrome), WebM otherwise. No audio.
+- **Whiteboard → image or video:** board → Export. The video plays the whole drill with step notes as captions.
+
 Press **?** in the editor for the full shortcut list.
 
 ## Reopening a project
@@ -116,6 +130,9 @@ src/
     Compare.tsx, Present.tsx
     Board.tsx              rink whiteboard (lib/board.ts = model + route animation)
     RelinkModal.tsx        "find the video" prompt (lib/videoAccess.ts)
+    BackupModal.tsx        backup / restore (lib/backup.ts)
+    ExportClipModal.tsx    clip → video (lib/exporter.tsx: off-screen scene render + MediaRecorder)
+    ExportResult.tsx       Save / Share sheet (lib/saveFile.ts)
     Editor.tsx             editor layout
     VideoStage.tsx         video + Konva canvas, all pointer/pencil/pinch input
     ShapeNode.tsx          renders a shape
@@ -127,4 +144,3 @@ src/
 ## Roadmap
 
 - **Maybe later:** auto-tracking assist (tap a player and the app guesses the path for you to correct).
-- **Phase 4:** export MP4/WebM/PNG, project backup/import.

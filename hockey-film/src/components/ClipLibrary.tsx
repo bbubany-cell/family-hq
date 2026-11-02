@@ -92,6 +92,9 @@ export function ClipLibrary({ projects, actions }: { projects: Map<string, Proje
                 {c.notes && <div className="small notes-preview">{c.notes}</div>}
               </div>
               <div className="card-tools">
+                <button className="btn icon ghost" aria-label="Export clip video" title="Export as video with drawings" onClick={(e) => { e.stopPropagation(); actions.exportClip(c); }}>
+                  <Icon name="export" size={18} />
+                </button>
                 <button className="btn icon ghost" aria-label="Edit clip" onClick={(e) => { e.stopPropagation(); setEditing(c); }}>
                   <Icon name="edit" size={18} />
                 </button>

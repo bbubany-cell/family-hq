@@ -11,6 +11,9 @@ import { ClipLibrary } from './ClipLibrary';
 import { Playlists } from './Playlists';
 import { newDrill } from '../lib/board';
 import { Icon } from './Icon';
+import { BackupModal, projectExportFile } from './BackupModal';
+import { ExportResult, type ExportFile } from './ExportResult';
+import { lastBackupAt } from '../lib/backup';
 
 export type Tab = 'videos' | 'clips' | 'playlists' | 'drills';
 
@@ -19,6 +22,7 @@ export interface LibraryActions {
   compare: (a: Clip, b: Clip) => void;
   present: (clipIds: string[]) => void;
   openDrill: (d: Drill) => void;
+  exportClip: (c: Clip) => void;
 }
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
@@ -39,6 +43,11 @@ export function Library({ tab, setTab, actions }: { tab: Tab; setTab: (t: Tab) =
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const byId = useMemo(() => new Map((projects ?? []).map((p) => [p.id, p])), [projects]);
+  const [backupOpen, setBackupOpen] = useState(false);
+  const [lastBackup, setLastBackup] = useState(lastBackupAt);
+  const days = lastBackup ? Math.floor((Date.now() - lastBackup) / 86_400_000) : null;
+  // Nudge when there's work to lose and no backup in the last week.
+  const stale = !!projects?.length && (days === null || days >= 7);
 
   return (
     <div className="library">
@@ -50,7 +59,17 @@ export function Library({ tab, setTab, actions }: { tab: Tab; setTab: (t: Tab) =
             <div className="dim small">Videos stay on this device. Nothing is uploaded.</div>
           </div>
         </div>
+        <button className={'btn' + (stale ? ' warn' : '')} onClick={() => setBackupOpen(true)} title="Back up or restore your work">
+          <Icon name="backup" size={18} />
+          {days === null ? 'Back up (never)' : days === 0 ? 'Backed up today' : `Backed up ${days}d ago`}
+        </button>
       </header>
+      {backupOpen && (
+        <BackupModal
+          onClose={() => { setBackupOpen(false); setLastBackup(lastBackupAt()); }}
+          onRestored={() => { refresh(); loadLib(); }}
+        />
+      )}
 
       <nav className="tabs">
         {TABS.map((t) => (
@@ -74,6 +93,7 @@ function Videos({ projects, refresh, onOpen }: { projects: Project[] | null; ref
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [exportFile, setExportFile] = useState<ExportFile | null>(null);
   const clips = useLibrary((s) => s.clips);
 
   const createFrom = async (picked: PickedVideo | null) => {
@@ -156,12 +176,19 @@ function Videos({ projects, refresh, onOpen }: { projects: Project[] | null; ref
               </div>
               <div className="dim small ellipsis">{p.video.name}</div>
             </div>
-            <button className="btn icon ghost card-del" aria-label="Delete project" onClick={(e) => { e.stopPropagation(); remove(p); }}>
-              <Icon name="trash" size={18} />
-            </button>
+            <div className="card-tools">
+              <button className="btn icon ghost" aria-label="Export project" title="Export drawings + clips for this video"
+                onClick={async (e) => { e.stopPropagation(); setExportFile(await projectExportFile(p.id, p.name)); }}>
+                <Icon name="export" size={18} />
+              </button>
+              <button className="btn icon ghost" aria-label="Delete project" onClick={(e) => { e.stopPropagation(); remove(p); }}>
+                <Icon name="trash" size={18} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
+      {exportFile && <ExportResult file={exportFile} onClose={() => setExportFile(null)} />}
     </div>
   );
 }
