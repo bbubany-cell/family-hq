@@ -79,7 +79,7 @@ export function ExportClipModal({ project, src, start, end, name, onClose }: Pro
               ))}
             </div>
             <p className="hint">
-              Records in real time: about {Math.ceil(est)}s. Keep Film Room on screen while it runs. Drawings, spotlights and
+              Records in real time: about {Math.ceil(est)}s. Keep the app on screen while it runs. Drawings, spotlights and
               tracking are burned in. No audio.
             </p>
             {err && <p className="hint err-text">{err}</p>}

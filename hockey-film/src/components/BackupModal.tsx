@@ -50,7 +50,7 @@ export function BackupModal({ onClose, onRestored }: { onClose: () => void; onRe
           <button
             className="btn primary"
             disabled={!counts}
-            onClick={() => counts && setFile({ blob: backupBlob(counts), filename: `film-room-backup-${stamp()}.json` })}
+            onClick={() => counts && setFile({ blob: backupBlob(counts), filename: `iq-film-room-backup-${stamp()}.json` })}
           >
             <Icon name="backup" size={18} /> Create backup file
           </button>
@@ -116,7 +116,7 @@ export async function projectExportFile(projectId: string, name: string): Promis
   const b = await buildBackup(projectId);
   return {
     blob: backupBlob(b),
-    filename: `${fileSafe(name)}.film-room.json`,
+    filename: `${fileSafe(name)}.iq-film-room.json`,
     note: 'Drawings, tracking and clips for this video. Restore it with Backup → Restore. The video file itself is not included.',
   };
 }

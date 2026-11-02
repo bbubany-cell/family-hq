@@ -9,11 +9,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['icon.svg', 'icon-192.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Film Room — Hockey Video Analysis',
-        short_name: 'Film Room',
-        description: 'Local-first hockey video breakdown and teaching tool.',
+        name: 'Level Up the IQ Film Room',
+        short_name: 'IQ Film Room',
+        description: 'Hockey film breakdown and teaching: build hockey IQ, level up.',
         theme_color: '#0b0f14',
         background_color: '#0b0f14',
         display: 'standalone',

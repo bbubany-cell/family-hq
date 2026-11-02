@@ -11,7 +11,7 @@ export function RelinkModal() {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>Find the video</h2>
         <p>
-          Film Room never copies your video, so it needs you to point at it again:
+          The app never copies your video, so it needs you to point at it again:
           <br />
           <strong>{project.video.name}</strong> <span className="dim">({fmtBytes(project.video.size)})</span>
           <br />

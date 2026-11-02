@@ -1,9 +1,10 @@
-// Backup / restore: everything Film Room knows (projects with drawings + tracking, clips, playlists,
+// Backup / restore: everything the app knows (projects with drawings + tracking, clips, playlists,
 // drills) in one JSON file. Videos are NOT included — they stay on your device; after restoring on a
 // new device you point each project at its video once (same "Find the video" prompt as always).
 import { db } from '../db/db';
 import type { Clip, Drill, Playlist, Project } from '../types';
 
+// NOTE: the format id stays 'film-room-backup' (the app's original name) so older backups keep restoring.
 export interface BackupFile {
   format: 'film-room-backup';
   version: 1;
@@ -45,11 +46,11 @@ export function parseBackup(text: string): BackupFile {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error("That file isn't a Film Room backup (not valid JSON).");
+    throw new Error("That file isn't an IQ Film Room backup (not valid JSON).");
   }
   const b = data as Partial<BackupFile>;
-  if (b?.format !== 'film-room-backup' || !Array.isArray(b.projects)) throw new Error("That file isn't a Film Room backup.");
-  if ((b.version ?? 0) > 1) throw new Error('This backup is from a newer version of Film Room. Reload the app to update, then try again.');
+  if (b?.format !== 'film-room-backup' || !Array.isArray(b.projects)) throw new Error("That file isn't an IQ Film Room backup.");
+  if ((b.version ?? 0) > 1) throw new Error('This backup is from a newer version of the app. Reload the app to update, then try again.');
   return {
     format: 'film-room-backup',
     version: 1,
