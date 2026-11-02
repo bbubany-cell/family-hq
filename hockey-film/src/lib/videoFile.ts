@@ -99,3 +99,17 @@ export async function fileFromHandle(handle: FileSystemFileHandle): Promise<File
     return null;
   }
 }
+
+/** Small JPEG of the frame currently showing in a <video> (for clip / project cards). */
+export function captureFrame(v: HTMLVideoElement | null, width = 320): string | undefined {
+  if (!v || !v.videoWidth) return undefined;
+  try {
+    const c = document.createElement('canvas');
+    c.width = width;
+    c.height = Math.round((width * v.videoHeight) / v.videoWidth);
+    c.getContext('2d')!.drawImage(v, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.7);
+  } catch {
+    return undefined;
+  }
+}

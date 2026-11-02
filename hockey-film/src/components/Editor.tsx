@@ -1,8 +1,9 @@
 // Editor screen: header, tool rail, video stage, side panel, transport.
 import { useEffect, useMemo, useState } from 'react';
-import type { Project } from '../types';
+import type { Clip, Project } from '../types';
+import { useLibrary } from '../store/libraryStore';
 import { useEditor } from '../store/editorStore';
-import { getVideo, seek, setRate, setStopSource, usePlayer } from '../store/playerStore';
+import { getVideo, seek, setLoop, setRate, setStopSource, usePlayer } from '../store/playerStore';
 import { useAutosave, useSaveStatus } from '../hooks/useAutosave';
 import { useKeyboard } from '../hooks/useKeyboard';
 import { shapeOpacity } from '../lib/util';
@@ -16,7 +17,7 @@ import { Icon } from './Icon';
 
 const isNarrow = () => window.innerWidth < 1000;
 
-export function Editor({ project, src, onExit }: { project: Project; src: string; onExit: () => void }) {
+export function Editor({ project, src, focus, onExit }: { project: Project; src: string; focus?: Clip; onExit: () => void }) {
   const [panelOpen, setPanelOpen] = useState(!isNarrow());
   const [help, setHelp] = useState(false);
   const [clearMenu, setClearMenu] = useState(false);
@@ -52,10 +53,15 @@ export function Editor({ project, src, onExit }: { project: Project; src: string
     return () => useEditor.getState().closeProject();
   }, [project]);
 
-  // Resume where we left off once the video can seek.
+  // Opened from a clip: loop that clip. Otherwise resume where we left off.
   useEffect(() => {
-    if (ready && project.lastTime > 0) seek(project.lastTime);
-  }, [ready, project.lastTime]);
+    if (!ready) return;
+    if (focus) {
+      setLoop({ in: focus.start, out: focus.end, enabled: true });
+      seek(focus.start);
+    } else if (project.lastTime > 0) seek(project.lastTime);
+  }, [ready, project.lastTime, focus]);
+  useEffect(() => { useLibrary.getState().load(); }, []);
 
   const handlers = useMemo(
     () => ({

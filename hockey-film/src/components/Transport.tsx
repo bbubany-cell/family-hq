@@ -14,6 +14,12 @@ import {
 } from '../store/playerStore';
 import { clamp, fmtTime } from '../lib/util';
 import { Icon } from './Icon';
+import { ClipDialog } from './ClipDialog';
+import { useLibrary } from '../store/libraryStore';
+import { captureFrame } from '../lib/videoFile';
+import { uid } from '../lib/util';
+import { getVideo } from '../store/playerStore';
+import type { Clip } from '../types';
 
 export function Transport() {
   const { currentTime, duration, playing, rate, loop, fps, teach, teachAtDrawings } = usePlayer();
@@ -23,6 +29,21 @@ export function Transport() {
   const onStop = stops.some((t) => Math.abs(t - currentTime) < 0.15);
   const barRef = useRef<HTMLDivElement>(null);
   const [dragT, setDragT] = useState<number | null>(null);
+  const [newClip, setNewClip] = useState<Clip | null>(null);
+  const project = useEditor((s) => s.project);
+
+  /** Clip from the In/Out range if set, otherwise a few seconds around the playhead. */
+  const startClip = () => {
+    if (!project) return;
+    getVideo()?.pause();
+    const now = getVideo()?.currentTime ?? currentTime;
+    const start = loop.in ?? Math.max(0, now - 3);
+    const end = loop.out ?? Math.min(duration, now + 5);
+    setNewClip({
+      id: uid(), projectId: project.id, name: `${project.name} @ ${fmtTime(start, false)}`, start, end,
+      tags: [], notes: '', createdAt: Date.now(), updatedAt: Date.now(), thumb: captureFrame(getVideo()),
+    });
+  };
 
   // One marker per distinct annotation moment.
   const markers = useMemo(() => [...new Set(shapes.map((s) => Math.round(s.t * 10) / 10))], [shapes]);
@@ -141,11 +162,26 @@ export function Transport() {
           >
             <Icon name="loop" size={18} /> Loop
           </button>
+          <button className="btn primary-outline" title="Save the In/Out range (or a few seconds here) as a clip" onClick={startClip}>
+            <Icon name="clip" size={18} /> Clip
+          </button>
           {(loop.in !== null || loop.out !== null) && (
             <button className="btn" title="Clear range" onClick={() => setLoop({ in: null, out: null, enabled: false })}><Icon name="close" size={18} /></button>
           )}
         </div>
       </div>
+      {newClip && (
+        <ClipDialog
+          clip={newClip}
+          now={() => getVideo()?.currentTime ?? currentTime}
+          duration={duration}
+          onCancel={() => setNewClip(null)}
+          onSave={(c) => {
+            useLibrary.getState().putClip(c);
+            setNewClip(null);
+          }}
+        />
+      )}
     </div>
   );
 }

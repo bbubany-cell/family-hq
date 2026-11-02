@@ -6,6 +6,7 @@ import { fmtTime, shapeOpacity } from '../lib/util';
 import type { Shape } from '../types';
 import { Icon } from './Icon';
 import { HockeyPanel } from './HockeyPanel';
+import { ProjectClips } from './ProjectClips';
 
 const KIND_LABEL: Record<Shape['kind'], string> = {
   pen: 'Pen', line: 'Line', arrow: 'Arrow', curve: 'Curve', ellipse: 'Ellipse', rect: 'Rect', text: 'Text',
@@ -108,6 +109,8 @@ export function Inspector({ onClose }: { onClose?: () => void }) {
           </button>
         </section>
       )}
+
+      <ProjectClips />
 
       <Layers />
 

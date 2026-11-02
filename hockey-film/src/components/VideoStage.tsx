@@ -11,22 +11,21 @@ import type Konva from 'konva';
 import { useEditor } from '../store/editorStore';
 import { attachVideo, getVideo, pause, play, setRate, usePlayer, type View } from '../store/playerStore';
 import { computeTransform, toScreen, toVideo, zoomAt, type ViewTransform } from '../lib/view';
-import { isPath, isStroke, shapeOpacity, thinPoints, uid } from '../lib/util';
+import { isPath, isStroke, thinPoints, uid } from '../lib/util';
+import { drawSpotlights, resolveScene, spotRows } from '../lib/scene';
 import {
   anchorOf,
   hasTrack,
   isAttachable,
   offsetAt,
-  resolveGap,
   setKeyframe,
-  shapeAt,
   snapsToPointer,
   spliceTrack,
   trailPoints,
   type Pt,
 } from '../lib/track';
 import { ZONES, zoneFromBox } from '../lib/zones';
-import type { Keyframe, PathShape, Shape, SpotlightShape } from '../types';
+import type { Keyframe, PathShape, Shape } from '../types';
 import { ShapeNode } from './ShapeNode';
 import { Icon } from './Icon';
 
@@ -45,12 +44,6 @@ const TAP_TOOLS = new Set(['marker', 'spotlight']);
 /** Shapes that get the resize box in Select mode (others use point handles). */
 const TRANSFORMABLE = new Set(['rect', 'ellipse', 'text', 'pen', 'trail', 'spotlight', 'marker']);
 
-interface Visible {
-  shape: Shape; // time-resolved (track applied, gap ends attached)
-  raw: Shape; // as stored
-  opacity: number;
-  locked: boolean;
-}
 
 export function VideoStage({ src }: { src: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,23 +94,11 @@ export function VideoStage({ src }: { src: string }) {
   const setView = (v: View) => usePlayer.getState().set({ view: clampView(v) });
 
   // ---------- where everything is right now ----------
-  const visible = useMemo(() => {
-    // 1) apply tracks, 2) attach gap-line ends to (tracked) players, 3) filter by visibility.
-    const resolved = new Map<string, Shape>();
-    for (const s of shapes) if (s.kind !== 'gap') resolved.set(s.id, shapeAt(s, currentTime));
-    for (const s of shapes) if (s.kind === 'gap') resolved.set(s.id, resolveGap(shapeAt(s, currentTime) as typeof s, resolved));
-    const layerById = new Map(layers.map((l) => [l.id, l]));
-    const out: Visible[] = [];
-    for (const raw of shapes) {
-      const l = layerById.get(raw.layerId);
-      if (l && !l.visible) continue;
-      let o = shapeOpacity(raw, currentTime);
-      // While recording a follow, always show the shape being tracked.
-      if (followArmed && raw.id === selectedId) o = Math.max(o, 1);
-      if (o > 0.001) out.push({ shape: resolved.get(raw.id)!, raw, opacity: o, locked: !!l?.locked });
-    }
-    return out;
-  }, [shapes, layers, currentTime, followArmed, selectedId]);
+  const visible = useMemo(
+    // While recording a follow, always show the shape being tracked.
+    () => resolveScene(shapes, layers, currentTime, followArmed ? selectedId : null),
+    [shapes, layers, currentTime, followArmed, selectedId],
+  );
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
@@ -681,7 +662,7 @@ export function VideoStage({ src }: { src: string }) {
   };
 
   // ---------- spotlights + trails ----------
-  const spots = visible.filter((v) => v.shape.kind === 'spotlight') as (Visible & { shape: SpotlightShape })[];
+  const spots = spotRows(visible);
   const trails = visible.filter((v) => v.raw.showTrail && hasTrack(v.raw));
 
   const ed = useEditor.getState();
@@ -716,7 +697,7 @@ export function VideoStage({ src }: { src: string }) {
             <KLayer listening={false}>
               <Group x={T.tx} y={T.ty} scaleX={T.scale} scaleY={T.scale}>
                 <KShape
-                  spots={spots.map((v) => [v.shape.x, v.shape.y, v.shape.rx, v.shape.ry, v.shape.dim, v.opacity])}
+                  spots={spots}
                   sceneFunc={(kctx, node) => drawSpotlights(kctx, node.getAttr('spots'), videoW, videoH)}
                 />
               </Group>
@@ -839,37 +820,6 @@ export function VideoStage({ src }: { src: string }) {
       {pencilOnly && !followArmed && <div className="pencil-badge">✎ Pencil draws · fingers pan</div>}
     </div>
   );
-}
-
-/**
- * Spotlight dimming: darken the frame, then punch soft-edged holes (destination-out) for each spotlight.
- * Lives on its own Konva layer so the compositing can't touch anything else.
- */
-function drawSpotlights(kctx: Konva.Context, spots: number[][], vw: number, vh: number) {
-  const c = (kctx as unknown as { _context: CanvasRenderingContext2D })._context;
-  let dark = 0;
-  for (const [, , , , dim, op] of spots) dark = Math.max(dark, dim * op);
-  if (dark <= 0) return;
-  c.save();
-  c.fillStyle = `rgba(0,0,0,${dark})`;
-  c.fillRect(0, 0, vw, vh);
-  c.globalCompositeOperation = 'destination-out';
-  for (const [x, y, rx, ry, , op] of spots) {
-    if (rx < 1 || ry < 1) continue;
-    c.save();
-    c.translate(x, y);
-    c.scale(rx, ry);
-    const g = c.createRadialGradient(0, 0, 0, 0, 0, 1.18);
-    g.addColorStop(0, `rgba(0,0,0,${op})`);
-    g.addColorStop(0.82, `rgba(0,0,0,${op})`);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    c.fillStyle = g;
-    c.beginPath();
-    c.arc(0, 0, 1.18, 0, Math.PI * 2);
-    c.fill();
-    c.restore();
-  }
-  c.restore();
 }
 
 /** Snap a line end to 15° increments (hold Shift). */
