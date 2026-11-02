@@ -87,7 +87,7 @@ export function HockeyPanel() {
         </section>
       )}
 
-      {kind === 'zone' && !sel && (
+      {kind === 'zone' && (!sel || ed.justDrawn) && (
         <section>
           <label className="lbl">Zone</label>
           <div className="chips">
