@@ -189,3 +189,72 @@ export interface Project {
   stops?: number[];
   teach?: { on: boolean; atDrawings: boolean };
 }
+
+// ---------------- Phase 3 ----------------
+
+export const CLIP_TAGS = ['Breakout', 'Forecheck', 'PP', 'PK', 'D-zone', 'Neutral zone', 'O-zone', 'Turnover', 'Goal', 'Good', 'Fix'] as const;
+
+/** A saved stretch of a project's video. Its drawings are the project's drawings in that time range. */
+export interface Clip {
+  id: string;
+  projectId: string;
+  name: string;
+  start: number;
+  end: number;
+  tags: string[];
+  notes: string;
+  createdAt: number;
+  updatedAt: number;
+  thumb?: string;
+}
+
+export interface Playlist {
+  id: string;
+  name: string;
+  clipIds: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ----- Rink whiteboard. All positions are in feet on a 200 × 85 ft rink (x: 0 = left end boards). -----
+
+export type BoardView = 'full' | 'half' | 'zone';
+export type PieceKind = 'O' | 'X' | 'G' | 'puck' | 'cone' | 'net' | 'coach';
+export type RouteKind = 'skate' | 'carry' | 'pass' | 'shot' | 'backward' | 'line';
+
+export interface Piece {
+  id: string;
+  kind: PieceKind;
+  color: string;
+  label: string;
+}
+
+export interface Route {
+  id: string;
+  kind: RouteKind;
+  color: string;
+  /** Freehand points in feet. */
+  points: number[];
+}
+
+/** One step of a play: where every piece is, and the routes drawn during this step. */
+export interface Step {
+  id: string;
+  pos: Record<string, { x: number; y: number }>;
+  routes: Route[];
+  note: string;
+}
+
+export interface Drill {
+  id: string;
+  name: string;
+  notes: string;
+  view: BoardView;
+  pieces: Piece[];
+  steps: Step[];
+  /** Seconds per step during playback. */
+  stepTime: number;
+  thumb?: string;
+  createdAt: number;
+  updatedAt: number;
+}

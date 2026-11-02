@@ -62,6 +62,38 @@ On desktop Chrome/Edge, use the install icon in the address bar. Once installed 
 
 Everything tracked rides along during playback: spotlights, rings, tags, arrows, text, zones and gap lines.
 
+## Phase 3: teaching tools
+
+- **Clips:** in a video, set In/Out (or don't, and it grabs a few seconds around the playhead), then tap
+  **Clip**. Give it a name, tags (Breakout, Forecheck, PP, PK, D-zone, Turnover, Goal… or your own) and notes.
+  The editor's side panel lists that video's clips; tap one to loop it.
+- **Clip library** (Clips tab): every clip from every game. Search names, notes and games, and filter by tag.
+  Tap a clip to open it in the editor. Tap the circle to select clips, then **Compare**, **Present** or add them to a **Playlist**.
+- **Compare:** two clips side by side (stacked in portrait). With **Sync** on, one set of controls drives both,
+  lined up from each clip's start. Turn Sync off to scrub each one on its own. Drawings and tracking show in both.
+- **Presentation mode:** a playlist (or any selected clips) plays fullscreen with drawings and no clutter.
+  Tap = play/pause, swipe or ←/→ = previous/next clip, Esc = exit. Each clip stops on its last frame
+  (or turn on Auto-advance), and teaching stops inside a clip pause it there. Clip notes are one tap away.
+- **Rink whiteboard** (Drills tab): full, half or zone view. Place O / X / goalie / coach / puck / cones / nets
+  and draw skate, carry (wavy), backward, pass (dashed), shot (double) routes, or plain lines.
+  **Draw a route starting on a player and he skates it in the next step.** Starting a pass or shot at the puck
+  moves the puck, and a carry brings the puck along. Add steps, add a note per step, and hit play: everyone
+  skates their routes. Drills autosave and can be duplicated for variations.
+
+## Phase 4: export & backup
+
+- **Backup & restore** (home screen, top right): one small file with every video's drawings, tracking, clips,
+  playlists and drills. Save it to Files/iCloud or share it (AirDrop, Mail). **Restore** merges: anything missing is
+  added and anything older is updated; nothing is deleted. The button turns orange if it's been a week (or never).
+  Videos aren't in the backup; after restoring on a new device, open each video once to point it at its file.
+- **Export one video's work:** the export icon on a video card gives a single-game file (drawings + clips) for an
+  assistant coach or another device. Restore it the same way.
+- **Frame → PNG:** editor → Export → *This frame as image*. Full video resolution with all drawings burned in.
+- **Clip → video:** editor → Export → *In → Out as video*, or the export icon on any clip in the Clips tab.
+  Drawings, spotlights and tracking are burned in. Options: normal or slow-mo, a 2–4s freeze at each teaching stop,
+  1080p/720p. It records in real time, so keep the app on screen. MP4 on Safari/iPad (and recent Chrome), WebM otherwise. No audio.
+- **Whiteboard → image or video:** board → Export. The video plays the whole drill with step notes as captions.
+
 Press **?** in the editor for the full shortcut list.
 
 ## Reopening a project
@@ -92,7 +124,15 @@ src/
   hooks/useAutosave.ts     debounced save + flush on hide/close
   hooks/useKeyboard.ts     all shortcuts
   components/
-    Library.tsx            project list, create / relink / delete
+    Library.tsx            home tabs: videos, clips, playlists, drills
+    ClipLibrary.tsx, ClipDialog.tsx, ProjectClips.tsx, Playlists.tsx
+    ClipPlayer.tsx         read-only clip player (shared by Compare + Present)
+    Compare.tsx, Present.tsx
+    Board.tsx              rink whiteboard (lib/board.ts = model + route animation)
+    RelinkModal.tsx        "find the video" prompt (lib/videoAccess.ts)
+    BackupModal.tsx        backup / restore (lib/backup.ts)
+    ExportClipModal.tsx    clip → video (lib/exporter.tsx: off-screen scene render + MediaRecorder)
+    ExportResult.tsx       Save / Share sheet (lib/saveFile.ts)
     Editor.tsx             editor layout
     VideoStage.tsx         video + Konva canvas, all pointer/pencil/pinch input
     ShapeNode.tsx          renders a shape
@@ -104,5 +144,3 @@ src/
 ## Roadmap
 
 - **Maybe later:** auto-tracking assist (tap a player and the app guesses the path for you to correct).
-- **Phase 3:** clip library + tags, side-by-side compare, presentation playlists, rink whiteboard & drills.
-- **Phase 4:** export MP4/WebM/PNG, project backup/import.
