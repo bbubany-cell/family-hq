@@ -3,7 +3,12 @@
 Browser-based, local-first video breakdown for youth hockey coaching. Works on a laptop and an iPad
 (touch + Apple Pencil). No backend, no accounts. **Videos never leave your device.**
 
-## Run it
+## Live site
+
+**https://bbubany-cell.github.io/family-hq/**. Every push to `main` that touches `hockey-film/` redeploys it
+automatically (`.github/workflows/deploy-film-room.yml`). No computer needed to use it.
+
+## Run it locally (developers)
 
 ```bash
 cd hockey-film
