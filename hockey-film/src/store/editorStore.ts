@@ -102,7 +102,7 @@ function saveTiming(t: Omit<ShapeTiming, 't'>) {
   try { localStorage.setItem(TIMING_KEY, JSON.stringify(t)); } catch { /* private mode */ }
 }
 
-export const DEFAULT_COLORS = ['#ffd60a', '#ff3b30', '#2f81f7', '#34c759', '#ffffff', '#ff9500', '#bf5af2', '#000000'];
+export const DEFAULT_COLORS = ['#ffd60a', '#ff3b30', '#b3263f', '#2f81f7', '#34c759', '#ffffff', '#ff9500', '#000000'];
 
 export const useEditor = create<EditorState>((set, get) => {
   /** Record an undoable change. */
@@ -133,7 +133,7 @@ export const useEditor = create<EditorState>((set, get) => {
     pencilOnly: false,
     markerTeam: 'us',
     markerVariant: 'ring',
-    teamColors: { us: '#2f81f7', them: '#ff3b30' },
+    teamColors: { us: '#b3263f', them: '#2f81f7' }, // us = Anoka maroon, them = blue
     zonePreset: 'slot',
     spotlightDim: 0.6,
     trailReveal: 2,

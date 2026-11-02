@@ -33,6 +33,6 @@ export async function shareFile(file: File): Promise<boolean> {
 }
 
 /** Safe file name from a title. */
-export const fileSafe = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'film-room';
+export const fileSafe = (s: string) => s.replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 80) || 'iq-film-room';
 
 export const stamp = () => new Date().toISOString().slice(0, 10);

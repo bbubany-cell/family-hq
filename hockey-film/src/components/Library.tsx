@@ -53,9 +53,9 @@ export function Library({ tab, setTab, actions }: { tab: Tab; setTab: (t: Tab) =
     <div className="library">
       <header className="lib-head">
         <div className="brand">
-          <img src="./icon.svg" alt="" width={40} height={40} />
+          <img src="./icon-192.png" alt="" width={44} height={44} className="brand-logo" />
           <div>
-            <h1>Film Room</h1>
+            <h1>Level Up the IQ Film Room</h1>
             <div className="dim small">Videos stay on this device. Nothing is uploaded.</div>
           </div>
         </div>

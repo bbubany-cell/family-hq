@@ -343,7 +343,7 @@ export function Board({ initial, onExit }: { initial: Drill; onExit: () => void 
             >
               <Layer>
                 {/* Solid background so exported images/videos aren't transparent around the rink. */}
-                <Rect width={size.w} height={size.h} fill="#0f1722" listening={false} />
+                <Rect width={size.w} height={size.h} fill="#140f11" listening={false} />
                 <Group x={ox} y={oy} scaleX={s} scaleY={s}>
                   <RinkMarkings />
                   {prevRoutes.map((r) => <RouteNode key={'p' + r.id} r={r} opacity={0.22} />)}

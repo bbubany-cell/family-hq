@@ -1,4 +1,4 @@
-// Core data model for Film Room.
+// Core data model for Level Up the IQ Film Room.
 // All shape coordinates are in *video pixel space* (0..videoWidth, 0..videoHeight),
 // so annotations stay locked to the picture no matter how the view is zoomed or resized.
 
