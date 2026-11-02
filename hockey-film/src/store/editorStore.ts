@@ -174,10 +174,14 @@ export const useEditor = create<EditorState>((set, get) => {
     },
     // Panel edits: nothing selected → defaults for new drawings; just drawn → that drawing + defaults;
     // deliberately selected → only that drawing (your defaults stay put).
+    // Color is the exception: right after drawing, a new color is for your NEXT drawings only
+    // (the one you just drew keeps its color). Select a drawing deliberately to recolor it.
     setStyle: (style) => {
       const { selectedId: id, justDrawn } = get();
       if (!id || justDrawn) set((s) => ({ style: { ...s.style, ...style } }));
-      if (id) get().updateShape(id, style as Partial<Shape>, { coalesce: 'style:' + Object.keys(style).join() });
+      const patch: Partial<ShapeStyle> = { ...style };
+      if (justDrawn) delete patch.color;
+      if (id && Object.keys(patch).length) get().updateShape(id, patch as Partial<Shape>, { coalesce: 'style:' + Object.keys(patch).join() });
     },
     setTiming: (timing) => {
       const { selectedId: id, justDrawn } = get();

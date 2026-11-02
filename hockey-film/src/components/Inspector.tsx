@@ -19,7 +19,9 @@ export function Inspector({ onClose }: { onClose?: () => void }) {
   const fpsLocked = usePlayer((s) => s.fpsLocked);
   const selected = ed.shapes.find((s) => s.id === ed.selectedId);
   // Show the selected drawing's own values; otherwise the defaults for new drawings.
-  const style = selected ? { color: selected.color, width: selected.width, dashed: selected.dashed } : ed.style;
+  const style = selected
+    ? { color: ed.justDrawn ? ed.style.color : selected.color, width: selected.width, dashed: selected.dashed }
+    : ed.style;
   const timing = selected ? { hold: selected.hold, fadeIn: selected.fadeIn, fadeOut: selected.fadeOut } : ed.timing;
   const fontSize = selected?.kind === 'text' ? selected.fontSize : ed.fontSize;
   const pinned = timing.hold === null;
@@ -46,7 +48,9 @@ export function Inspector({ onClose }: { onClose?: () => void }) {
       <HockeyPanel />
 
       <section>
-        <label className="lbl">Color</label>
+        <label className="lbl">
+          Color {selected && ed.justDrawn && <span className="dim">for your next drawings</span>}
+        </label>
         <div className="swatches">
           {DEFAULT_COLORS.map((c) => (
             <button
