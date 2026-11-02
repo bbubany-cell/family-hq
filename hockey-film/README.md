@@ -43,6 +43,25 @@ On desktop Chrome/Edge, use the install icon in the address bar. Once installed 
 - **iPad:** big touch targets, the side panel turns into a drawer, and a "Pencil draws, fingers pan/zoom" toggle.
 - **Autosave** to IndexedDB on every change (and when you switch away from the tab). Resumes where you left off.
 
+## Phase 2: hockey highlighting
+
+- **Spotlight (S):** dims everything except a soft circle around a player. Tap for a standard size, or drag to size it.
+- **Player marker (M):** a skate ring or numbered dot in your team color or the opponent's, with a name/# tag.
+  Team colors are editable and recolor every marker on that team.
+- **Trail (W):** draw a route; during playback it draws itself on over N seconds and ends in an arrow.
+- **Zone (Z):** slot, high-danger area, neutral zone, blue line, passing lane, or a free area. Drag a box,
+  then drag the corner handles to fit the ice.
+- **Gap line (G):** drag from one player to another. Ends dropped on a marker or spotlight stick to that
+  player and follow him. Double-tap to label it.
+- **Follow with Pencil (tracking):** select anything and tap *Follow with Pencil*. Then hold the Pencil on
+  the player: the video plays in slow-mo (0.1–1×) while you follow, and pauses when you lift. Press again to
+  continue, and re-record any stretch to fix it. While paused you can also drag a tracked shape to set a
+  keyframe at that moment. Turn on *Show path skated* to draw the route behind him.
+- **Teach mode:** drop red *Stop* flags on the timeline (Shift+S). With *Teach* on, playback pauses on each
+  stop (optionally at every drawing too). `<` and `>` jump between stops.
+
+Everything tracked rides along during playback: spotlights, rings, tags, arrows, text, zones and gap lines.
+
 Press **?** in the editor for the full shortcut list.
 
 ## Reopening a project
@@ -66,6 +85,8 @@ src/
   store/playerStore.ts     playback state + <video> controller (throttled seeking, loop, fps detect)
   db/db.ts                 IndexedDB via Dexie (projects + file handles)
   lib/view.ts              zoom/pan math (screen <-> video coords)
+  lib/track.ts             tracking: keyframe interpolation, anchors, gap attachment, trail reveal
+  lib/zones.ts             zone presets
   lib/util.ts              timing/opacity, helpers
   lib/videoFile.ts         file picking, metadata + thumbnail probe
   hooks/useAutosave.ts     debounced save + flush on hide/close
@@ -75,12 +96,13 @@ src/
     Editor.tsx             editor layout
     VideoStage.tsx         video + Konva canvas, all pointer/pencil/pinch input
     ShapeNode.tsx          renders a shape
+    HockeyPanel.tsx        side-panel controls for the hockey tools + Follow with Pencil
     Transport.tsx          scrub bar + playback controls
     Toolbar.tsx, Inspector.tsx, HelpOverlay.tsx, Icon.tsx
 ```
 
 ## Roadmap
 
-- **Phase 2:** spotlight with keyframes, player markers, animated trails, zone shading, gap lines, auto-pause teaching mode.
+- **Maybe later:** auto-tracking assist (tap a player and the app guesses the path for you to correct).
 - **Phase 3:** clip library + tags, side-by-side compare, presentation playlists, rink whiteboard & drills.
 - **Phase 4:** export MP4/WebM/PNG, project backup/import.

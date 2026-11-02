@@ -1,7 +1,10 @@
-import type { PathShape, Shape, ShapeTiming } from '../types';
+import type { GapShape, PathShape, Shape, ShapeTiming, ZoneShape } from '../types';
 
-/** Path-based shapes (pen/line/arrow/curve) store a points array instead of x/y. */
-export const isPath = (s: Shape): s is PathShape => 'points' in s;
+/** Points-based shapes (pen/line/arrow/curve/trail/zone/gap) store a points array instead of x/y. */
+export const isPath = (s: Shape): s is PathShape | ZoneShape | GapShape => 'points' in s;
+/** Line-like shapes drawn as strokes (not zones or gaps). */
+export const isStroke = (s: Shape): s is PathShape =>
+  s.kind === 'pen' || s.kind === 'line' || s.kind === 'arrow' || s.kind === 'curve' || s.kind === 'trail';
 
 export const uid = () =>
   (crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)).slice(0, 12);
@@ -25,9 +28,10 @@ export const fmtBytes = (b: number) =>
 const EPS = 0.02;
 
 /** Opacity (0..1) of a shape at time `now` based on its timing. */
-export function shapeOpacity(s: ShapeTiming, now: number): number {
+export function shapeOpacity(s: ShapeTiming & { reveal?: number }, now: number): number {
   const start = s.t;
-  const end = s.hold === null ? Infinity : s.t + s.hold;
+  // A trail is solid while it draws itself on, then holds.
+  const end = s.hold === null ? Infinity : s.t + (s.reveal ?? 0) + s.hold;
   if (now < start - EPS) {
     if (s.fadeIn <= 0) return 0;
     const into = now - (start - s.fadeIn);

@@ -1,12 +1,13 @@
 // Global keyboard shortcuts for the editor. See HelpOverlay for the list shown to the user.
 import { useEffect } from 'react';
 import { useEditor } from '../store/editorStore';
-import { jump, nudgeRate, play, seek, setLoop, stepFrames, togglePlay, usePlayer, getVideo } from '../store/playerStore';
+import { gotoStop, jump, nudgeRate, play, seek, setLoop, stepFrames, togglePlay, usePlayer, getVideo } from '../store/playerStore';
 import { isTypingTarget, shapeOpacity } from '../lib/util';
 import type { Tool } from '../types';
 
 const TOOL_KEYS: Record<string, Tool> = {
   v: 'select', h: 'hand', p: 'pen', n: 'line', a: 'arrow', c: 'curve', e: 'ellipse', r: 'rect', t: 'text', x: 'eraser',
+  s: 'spotlight', m: 'marker', w: 'trail', z: 'zone', g: 'gap',
 };
 const TOOL_ORDER: Tool[] = ['select', 'hand', 'pen', 'line', 'arrow', 'curve', 'ellipse', 'rect', 'text', 'eraser'];
 
@@ -54,10 +55,15 @@ export function useKeyboard(h: Handlers) {
         case 'i': setLoop({ in: getVideo()?.currentTime ?? pl.currentTime }); break;
         case 'o': setLoop({ out: getVideo()?.currentTime ?? pl.currentTime, enabled: pl.loop.in !== null ? true : pl.loop.enabled }); break;
 
+        // ---- teaching ----
+        case '<': gotoStop(-1); break;
+        case '>': gotoStop(1); break;
+
         // ---- tools ----
         case 'd': ed.toggleDraw(); break;
         case 'Escape':
-          if (ed.selectedId) ed.select(null);
+          if (ed.followArmed) ed.armFollow(false);
+          else if (ed.selectedId) ed.select(null);
           else ed.setTool('select');
           break;
         case 'Delete':
@@ -78,7 +84,9 @@ export function useKeyboard(h: Handlers) {
         case '\\': h.togglePanel(); break;
 
         default:
-          if (TOOL_KEYS[k] && !e.shiftKey) ed.setTool(TOOL_KEYS[k]);
+          if (e.shiftKey && k === 's') ed.toggleStop(getVideo()?.currentTime ?? pl.currentTime);
+          else if (e.shiftKey && k === 't') pl.set({ teach: !pl.teach });
+          else if (TOOL_KEYS[k] && !e.shiftKey) ed.setTool(TOOL_KEYS[k]);
           else if (/^[1-9]$/.test(k)) ed.setTool(TOOL_ORDER[Number(k) - 1]);
           else handled = false;
       }

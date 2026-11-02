@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Project } from '../types';
 import { useEditor } from '../store/editorStore';
-import { getVideo, seek, setRate, usePlayer } from '../store/playerStore';
+import { getVideo, seek, setRate, setStopSource, usePlayer } from '../store/playerStore';
 import { useAutosave, useSaveStatus } from '../hooks/useAutosave';
 import { useKeyboard } from '../hooks/useKeyboard';
 import { shapeOpacity } from '../lib/util';
@@ -37,8 +37,18 @@ export function Editor({ project, src, onExit }: { project: Project; src: string
       view: { zoom: 1, x: 0, y: 0 },
       currentTime: project.lastTime,
       rate: 1,
+      teach: !!project.teach?.on,
+      teachAtDrawings: !!project.teach?.atDrawings,
+      following: false,
     });
     setRate(1);
+    // Teach mode pauses at stops; optionally at every drawing's start too.
+    setStopSource(() => {
+      const ed = useEditor.getState();
+      const times = [...ed.stops];
+      if (usePlayer.getState().teachAtDrawings) for (const s of ed.shapes) times.push(s.t);
+      return times.sort((a, b) => a - b);
+    });
     return () => useEditor.getState().closeProject();
   }, [project]);
 

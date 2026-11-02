@@ -34,6 +34,13 @@ const P: Record<string, string> = {
   clock: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',
   pencil: 'M3 21l3.5-1 12-12-2.5-2.5-12 12zM14 6.5l2.5 2.5',
   video: 'M3 6h12v12H3zM15 10l6-3v10l-6-3z',
+  spotlight: 'M12 8a5 4 0 100 8 5 4 0 000-8zM12 2v3M4.5 5l2 2M19.5 5l-2 2M2 12h2M20 12h2',
+  marker: 'M12 3a2.5 2.5 0 100 5 2.5 2.5 0 000-5zM9 10h6l-1 6h-4zM4 19c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3z',
+  trail: 'M4 20c2-6 6-2 8-8s4-6 6-7M15 4l4 1-1 4',
+  zone: 'M4 5h16l-3 14H7zM8 9h8M9 13h6',
+  gap: 'M4 6v12M20 6v12M4 12h16M8 9l-4 3 4 3M16 9l4 3-4 3',
+  flag: 'M5 21V4M5 4h11l-2 4 2 4H5',
+  teach: 'M4 5h16v10H4zM8 19h8M12 15v4M10 8l4 2-4 2z',
 };
 
 export function Icon({ name, size = 22 }: { name: keyof typeof P | string; size?: number }) {

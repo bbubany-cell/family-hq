@@ -26,6 +26,11 @@ interface PlayerState {
   videoW: number;
   videoH: number;
   view: View;
+  /** Teach mode: auto-pause at teaching stops (and optionally at every drawing). */
+  teach: boolean;
+  teachAtDrawings: boolean;
+  /** True while recording a Pencil follow (stops are ignored). */
+  following: boolean;
   set: (p: Partial<PlayerState>) => void;
 }
 
@@ -41,6 +46,9 @@ export const usePlayer = create<PlayerState>((set) => ({
   videoW: 1920,
   videoH: 1080,
   view: { zoom: 1, x: 0, y: 0 },
+  teach: false,
+  teachAtDrawings: false,
+  following: false,
   set: (p) => set(p),
 }));
 
@@ -52,6 +60,12 @@ let frameCbId = 0;
 let rafId = 0;
 const frameDeltas: number[] = [];
 let lastMediaTime = -1;
+/** Last time the playback loop saw; a stop between this and the new time triggers a pause. */
+let lastTickT = -1;
+
+/** Supplies the teaching-stop times (set by the editor so this module doesn't import editor state). */
+let stopSource: () => number[] = () => [];
+export const setStopSource = (fn: () => number[]) => (stopSource = fn);
 
 /** Attach the controller to a <video>. Returns a detach function. */
 export function attachVideo(el: HTMLVideoElement) {
@@ -110,11 +124,25 @@ function startTicking() {
   // Older Safari lacks requestVideoFrameCallback; fall back to rAF.
   const useVFC = typeof (el as Partial<HTMLVideoElement>).requestVideoFrameCallback === 'function';
 
+  lastTickT = el.currentTime;
   const tick = (mediaTime: number) => {
-    const { loop } = S();
+    const { loop, teach, following } = S();
+    // Teach mode: stop exactly on the marked moment so the drawings there are up.
+    if (teach && !following && lastTickT >= 0) {
+      const from = lastTickT;
+      const stop = stopSource().find((t) => t > from + 1e-3 && t <= mediaTime + 1e-3);
+      if (stop !== undefined) {
+        el.pause();
+        lastTickT = stop;
+        seek(stop);
+        return;
+      }
+    }
+    lastTickT = mediaTime;
     if (loop.enabled && loop.in !== null && loop.out !== null && loop.out > loop.in && mediaTime >= loop.out) {
       el.currentTime = loop.in;
       mediaTime = loop.in;
+      lastTickT = loop.in;
     }
     S().set({ currentTime: mediaTime });
   };
@@ -192,6 +220,18 @@ export function seek(t: number, fast = false) {
 export function jump(delta: number) {
   if (!video) return;
   seek((pendingSeek ?? video.currentTime) + delta);
+}
+
+/** Jump to the next/previous teaching stop. */
+export function gotoStop(dir: 1 | -1) {
+  if (!video) return;
+  const now = pendingSeek ?? video.currentTime;
+  const stops = stopSource();
+  const t = dir > 0 ? stops.find((x) => x > now + 0.05) : [...stops].reverse().find((x) => x < now - 0.05);
+  if (t !== undefined) {
+    pause();
+    seek(t);
+  }
 }
 
 /** Step whole frames. Lands slightly inside the target frame to avoid boundary rounding. */

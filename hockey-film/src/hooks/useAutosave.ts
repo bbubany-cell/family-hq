@@ -32,6 +32,8 @@ export function useAutosave() {
         shapes: ed.shapes,
         layers: ed.layers,
         activeLayerId: ed.activeLayerId,
+        stops: ed.stops,
+        teach: { on: pl.teach, atDrawings: pl.teachAtDrawings },
         fps: pl.fps,
         fpsLocked: pl.fpsLocked,
         loop: pl.loop,
@@ -62,7 +64,7 @@ export function useAutosave() {
       if (s.rev !== prev.rev) schedule();
     });
     const unsubPl = usePlayer.subscribe((s, prev) => {
-      if (s.loop !== prev.loop || s.fps !== prev.fps || s.fpsLocked !== prev.fpsLocked) schedule();
+      if (s.loop !== prev.loop || s.fps !== prev.fps || s.fpsLocked !== prev.fpsLocked || s.teach !== prev.teach || s.teachAtDrawings !== prev.teachAtDrawings) schedule();
       // Remember the playhead, but don't hammer the DB during playback.
       else if (s.currentTime !== prev.currentTime && !s.playing) schedule(1500);
     });
