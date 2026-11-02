@@ -11,7 +11,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'icon-192.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Level Up the IQ Film Room',
+        name: 'IQ Film Room',
         short_name: 'IQ Film Room',
         description: 'Hockey film breakdown and teaching: build hockey IQ, level up.',
         theme_color: '#0e0b0c',

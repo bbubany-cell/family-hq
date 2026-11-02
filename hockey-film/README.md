@@ -1,6 +1,6 @@
-# Level Up the IQ Film Room
+# IQ Film Room
 
-Hockey video analysis & teaching (home-screen name: **IQ Film Room**).
+Hockey video analysis & teaching. Build hockey IQ, level up.
 
 Browser-based, local-first video breakdown for youth hockey coaching. Works on a laptop and an iPad
 (touch + Apple Pencil). No backend, no accounts. **Videos never leave your device.**
