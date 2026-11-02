@@ -18,13 +18,26 @@ export function Inspector({ onClose }: { onClose?: () => void }) {
   const fps = usePlayer((s) => s.fps);
   const fpsLocked = usePlayer((s) => s.fpsLocked);
   const selected = ed.shapes.find((s) => s.id === ed.selectedId);
-  const { style, timing } = ed;
+  // Show the selected drawing's own values; otherwise the defaults for new drawings.
+  const style = selected
+    ? { color: ed.justDrawn ? ed.style.color : selected.color, width: selected.width, dashed: selected.dashed }
+    : ed.style;
+  const timing = selected ? { hold: selected.hold, fadeIn: selected.fadeIn, fadeOut: selected.fadeOut } : ed.timing;
+  const fontSize = selected?.kind === 'text' ? selected.fontSize : ed.fontSize;
   const pinned = timing.hold === null;
+  const target = !selected
+    ? 'Applies to your next drawings. To change an older drawing, tap it with Select (arrow tool).'
+    : ed.justDrawn
+      ? `Changes the ${KIND_LABEL[selected.kind].toLowerCase()} you just drew, and your next drawings.`
+      : `Changes only this ${KIND_LABEL[selected.kind].toLowerCase()}.`;
 
   return (
     <aside className="inspector">
       <div className="panel-head">
-        <strong>{selected ? `${KIND_LABEL[selected.kind]} @ ${fmtTime(selected.t)}` : 'New drawings'}</strong>
+        <strong>
+          {selected ? `${KIND_LABEL[selected.kind]} @ ${fmtTime(selected.t)}` : 'New drawings'}
+          {selected && ed.justDrawn && <span className="dim small"> · just drawn</span>}
+        </strong>
         {onClose && (
           <button className="btn icon ghost" onClick={onClose} aria-label="Close panel">
             <Icon name="close" />
@@ -35,7 +48,9 @@ export function Inspector({ onClose }: { onClose?: () => void }) {
       <HockeyPanel />
 
       <section>
-        <label className="lbl">Color</label>
+        <label className="lbl">
+          Color {selected && ed.justDrawn && <span className="dim">for your next drawings</span>}
+        </label>
         <div className="swatches">
           {DEFAULT_COLORS.map((c) => (
             <button
@@ -66,14 +81,17 @@ export function Inspector({ onClose }: { onClose?: () => void }) {
       {(ed.tool === 'text' || selected?.kind === 'text') && (
         <section>
           <label className="lbl">
-            Text size <span className="dim">{Math.round(ed.fontSize)}</span>
+            Text size <span className="dim">{Math.round(fontSize)}</span>
           </label>
-          <input type="range" min={16} max={120} value={ed.fontSize} onChange={(e) => ed.setFontSize(Number(e.target.value))} />
+          <input type="range" min={16} max={120} value={fontSize} onChange={(e) => ed.setFontSize(Number(e.target.value))} />
         </section>
       )}
 
       <section>
-        <label className="lbl">On screen for</label>
+        <label className="lbl">
+          On screen for <span className="dim">{pinned ? 'rest of video' : `${(timing.hold ?? 0).toFixed(1)}s`}</span>
+        </label>
+        <p className="hint target-hint">{target}</p>
         <div className="seg">
           <button className={pinned ? 'active' : ''} onClick={() => ed.setTiming({ hold: pinned ? 3 : null })} title="Stay visible for the rest of the video">
             Pin

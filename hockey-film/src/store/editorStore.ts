@@ -25,6 +25,11 @@ export interface EditorState {
   timing: Omit<ShapeTiming, 't'>;
   fontSize: number;
   selectedId: string | null;
+  /**
+   * True when the selection is the drawing you just made (auto-selected). Panel changes then apply to it
+   * AND become the defaults for your next drawings. A drawing you deliberately select only changes itself.
+   */
+  justDrawn: boolean;
   /** iPad: when true, Apple Pencil draws and fingers only pan/zoom. */
   pencilOnly: boolean;
 
@@ -63,7 +68,7 @@ export interface EditorState {
   /** Change a team's color and recolor all of that team's markers (one undo step). */
   recolorTeam: (team: Team, color: string) => void;
   toggleStop: (t: number) => void;
-  select: (id: string | null) => void;
+  select: (id: string | null, opts?: { justDrawn?: boolean }) => void;
 
   addShape: (s: Shape) => void;
   /** Patch one shape. `coalesce` merges repeated patches with the same key into one undo step. */
@@ -81,6 +86,20 @@ export interface EditorState {
   deleteLayer: (id: string) => void;
   setActiveLayer: (id: string) => void;
   moveShapeToLayer: (shapeId: string, layerId: string) => void;
+}
+
+// Default "on screen for" timing is remembered on this device between sessions.
+const TIMING_KEY = 'filmroom.timing';
+function loadTiming(): Omit<ShapeTiming, 't'> {
+  const fallback = { hold: 3, fadeIn: 0, fadeOut: 0.5 };
+  try {
+    const v = JSON.parse(localStorage.getItem(TIMING_KEY) ?? 'null');
+    if (v && (v.hold === null || typeof v.hold === 'number') && typeof v.fadeIn === 'number' && typeof v.fadeOut === 'number') return v;
+  } catch { /* unavailable */ }
+  return fallback;
+}
+function saveTiming(t: Omit<ShapeTiming, 't'>) {
+  try { localStorage.setItem(TIMING_KEY, JSON.stringify(t)); } catch { /* private mode */ }
 }
 
 export const DEFAULT_COLORS = ['#ffd60a', '#ff3b30', '#2f81f7', '#34c759', '#ffffff', '#ff9500', '#bf5af2', '#000000'];
@@ -107,9 +126,10 @@ export const useEditor = create<EditorState>((set, get) => {
     tool: 'pen',
     lastDrawTool: 'pen',
     style: { color: '#ffd60a', width: 6, dashed: false },
-    timing: { hold: 3, fadeIn: 0, fadeOut: 0.5 },
+    timing: loadTiming(),
     fontSize: 42,
     selectedId: null,
+    justDrawn: false,
     pencilOnly: false,
     markerTeam: 'us',
     markerVariant: 'ring',
@@ -134,6 +154,7 @@ export const useEditor = create<EditorState>((set, get) => {
         stops: p.stops ?? [],
         followArmed: false,
         selectedId: null,
+        justDrawn: false,
         past: [],
         future: [],
         rev: 0,
@@ -151,19 +172,29 @@ export const useEditor = create<EditorState>((set, get) => {
       const { tool, lastDrawTool } = get();
       get().setTool(tool === 'select' || tool === 'hand' ? lastDrawTool : 'select');
     },
+    // Panel edits: nothing selected → defaults for new drawings; just drawn → that drawing + defaults;
+    // deliberately selected → only that drawing (your defaults stay put).
+    // Color is the exception: right after drawing, a new color is for your NEXT drawings only
+    // (the one you just drew keeps its color). Select a drawing deliberately to recolor it.
     setStyle: (style) => {
-      set((s) => ({ style: { ...s.style, ...style } }));
-      const id = get().selectedId;
-      if (id) get().updateShape(id, style as Partial<Shape>, { coalesce: 'style:' + Object.keys(style).join() });
+      const { selectedId: id, justDrawn } = get();
+      if (!id || justDrawn) set((s) => ({ style: { ...s.style, ...style } }));
+      const patch: Partial<ShapeStyle> = { ...style };
+      if (justDrawn) delete patch.color;
+      if (id && Object.keys(patch).length) get().updateShape(id, patch as Partial<Shape>, { coalesce: 'style:' + Object.keys(patch).join() });
     },
     setTiming: (timing) => {
-      set((s) => ({ timing: { ...s.timing, ...timing } }));
-      const id = get().selectedId;
+      const { selectedId: id, justDrawn } = get();
+      if (!id || justDrawn) {
+        set((s) => ({ timing: { ...s.timing, ...timing } }));
+        saveTiming(get().timing);
+      }
       if (id) get().updateShape(id, timing as Partial<Shape>, { coalesce: 'timing:' + Object.keys(timing).join() });
     },
     setFontSize: (fontSize) => {
-      set({ fontSize });
-      const sel = get().shapes.find((s) => s.id === get().selectedId);
+      const { selectedId: id, justDrawn } = get();
+      if (!id || justDrawn) set({ fontSize });
+      const sel = get().shapes.find((s) => s.id === id);
       if (sel?.kind === 'text') get().updateShape(sel.id, { fontSize } as Partial<Shape>, { coalesce: 'font' });
     },
     setPencilOnly: (pencilOnly) => set({ pencilOnly }),
@@ -178,18 +209,13 @@ export const useEditor = create<EditorState>((set, get) => {
       const near = stops.findIndex((x) => Math.abs(x - t) < 0.15);
       commit({ stops: near >= 0 ? stops.filter((_, i) => i !== near) : [...stops, t].sort((a, b) => a - b) });
     },
-    select: (selectedId) => {
-      set({ selectedId, followArmed: selectedId ? get().followArmed && selectedId === get().selectedId : false });
-      // Reflect the selected shape's style in the panel so tweaks start from its values.
-      const s = get().shapes.find((x) => x.id === selectedId);
-      if (s) {
-        set({
-          style: { color: s.color, width: s.width, dashed: s.dashed },
-          timing: { hold: s.hold, fadeIn: s.fadeIn, fadeOut: s.fadeOut },
-          ...(s.kind === 'text' ? { fontSize: s.fontSize } : {}),
-        });
-      }
-    },
+    // Selecting never touches your defaults; the panel just shows the selected drawing's own values.
+    select: (selectedId, opts) =>
+      set({
+        selectedId,
+        justDrawn: !!selectedId && !!opts?.justDrawn,
+        followArmed: selectedId ? get().followArmed && selectedId === get().selectedId : false,
+      }),
 
     addShape: (shape) => commit({ shapes: [...get().shapes, shape] }),
 

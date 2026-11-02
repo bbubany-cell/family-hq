@@ -278,8 +278,9 @@ export function VideoStage({ src }: { src: string }) {
     }
     const ed = useEditor.getState();
     ed.addShape(s);
-    // Player tools: select the new shape right away so "Follow with Pencil" is one tap away.
-    if (TAP_TOOLS.has(s.kind) || s.kind === 'gap') ed.select(s.id);
+    // The drawing you just made is the panel's target: tap "1s", a color, etc. and it changes this drawing
+    // (and your next ones). Also puts "Follow with Pencil" one tap away for player tools.
+    ed.select(s.id, { justDrawn: true });
   };
 
   // ---------- Follow with Pencil (record a track) ----------
@@ -361,7 +362,6 @@ export function VideoStage({ src }: { src: string }) {
       const t = Math.min(s.t, first);
       const hold = s.hold === null ? null : Math.max(s.hold + (s.t - t), last - t + 0.5);
       ed.updateShape(s.id, { t, hold }, { history: false });
-      useEditor.setState({ timing: { ...ed.timing, hold } }); // keep the panel in sync without an extra undo step
     }
   };
 
@@ -539,10 +539,12 @@ export function VideoStage({ src }: { src: string }) {
       if (val) ed.updateShape(existing.id, { text: val } as Partial<Shape>);
       else ed.deleteShape(existing.id);
     } else if (val) {
+      const id = uid();
       ed.addShape({
-        id: uid(), kind: 'text', layerId: ed.activeLayerId, ...ed.style, ...ed.timing,
+        id, kind: 'text', layerId: ed.activeLayerId, ...ed.style, ...ed.timing,
         t: getVideo()?.currentTime ?? 0, x: te.x, y: te.y, text: val, fontSize: ed.fontSize,
       });
+      ed.select(id, { justDrawn: true });
     }
     setTextEdit(null);
     textRef.current!.blur();
