@@ -10,7 +10,12 @@ const ROWS: [string, string][] = [
   ['Home / End', 'Start / end of video'],
   ['D', 'Toggle draw ↔ select'],
   ['V H P N A C E R T X', 'Select, Pan, Pen, liNe, Arrow, Curve, Ellipse, Rect, Text, eraser'],
+  ['S M W Z G', 'Spotlight, Marker, trail (W), Zone, Gap line'],
   ['1 – 9', 'Tools by position'],
+  ['Shift + S', 'Add / remove a teaching stop here'],
+  ['Shift + T', 'Teach mode on/off (auto-pause at stops)'],
+  ['< / >', 'Previous / next stop'],
+  ['Esc', 'Stop following / deselect'],
   ['Shift (while drawing)', 'Snap angle / perfect circle & square'],
   ['Delete', 'Delete selected drawing'],
   ['Shift + Delete', 'Clear drawings on this frame'],
@@ -40,6 +45,8 @@ export function HelpOverlay({ onClose }: { onClose: () => void }) {
         <p className="dim small">
           Drawings start on the frame you draw them and stay up for the "On screen for" time (or pin them). Double-tap a text
           label in Select mode to edit it. Curved arrow: just sketch the bend — it snaps to a clean curve.
+          To make anything follow a player: select it, tap <b>Follow with Pencil</b>, then hold the Pencil on the
+          player while the video plays in slow-mo. Lift to pause, press again to keep going.
         </p>
         <button className="btn primary" onClick={onClose}>Got it</button>
       </div>

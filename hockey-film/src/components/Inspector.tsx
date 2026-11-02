@@ -5,9 +5,11 @@ import { getVideo, seek, usePlayer } from '../store/playerStore';
 import { fmtTime, shapeOpacity } from '../lib/util';
 import type { Shape } from '../types';
 import { Icon } from './Icon';
+import { HockeyPanel } from './HockeyPanel';
 
 const KIND_LABEL: Record<Shape['kind'], string> = {
   pen: 'Pen', line: 'Line', arrow: 'Arrow', curve: 'Curve', ellipse: 'Ellipse', rect: 'Rect', text: 'Text',
+  spotlight: 'Spotlight', marker: 'Player', trail: 'Trail', zone: 'Zone', gap: 'Gap',
 };
 
 export function Inspector({ onClose }: { onClose?: () => void }) {
@@ -28,6 +30,8 @@ export function Inspector({ onClose }: { onClose?: () => void }) {
           </button>
         )}
       </div>
+
+      <HockeyPanel />
 
       <section>
         <label className="lbl">Color</label>
@@ -194,7 +198,8 @@ function Layers() {
                   >
                     <span className="dot" style={{ background: s.color }} />
                     {KIND_LABEL[s.kind]}
-                    {s.kind === 'text' ? ` "${s.text.slice(0, 14)}"` : ''}
+                    {s.kind === 'text' ? ` "${s.text.slice(0, 14)}"` : s.kind === 'marker' && s.label ? ` ${s.label.slice(0, 14)}` : ''}
+                    {s.track?.length ? ' ⟿' : ''}
                     <span className="dim"> {fmtTime(s.t)}</span>
                     <button
                       className="x"

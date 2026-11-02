@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useEditor } from '../store/editorStore';
 import {
   RATES,
+  gotoStop,
   jump,
   seek,
   setLoop,
@@ -15,8 +16,11 @@ import { clamp, fmtTime } from '../lib/util';
 import { Icon } from './Icon';
 
 export function Transport() {
-  const { currentTime, duration, playing, rate, loop, fps } = usePlayer();
+  const { currentTime, duration, playing, rate, loop, fps, teach, teachAtDrawings } = usePlayer();
   const shapes = useEditor((s) => s.shapes);
+  const stops = useEditor((s) => s.stops);
+  const selected = useEditor((s) => s.shapes.find((x) => x.id === s.selectedId));
+  const onStop = stops.some((t) => Math.abs(t - currentTime) < 0.15);
   const barRef = useRef<HTMLDivElement>(null);
   const [dragT, setDragT] = useState<number | null>(null);
 
@@ -65,6 +69,15 @@ export function Transport() {
         {markers.map((t) => (
           <div key={t} className="scrub-marker" style={{ left: pct(t) }} />
         ))}
+        {stops.map((t) => (
+          <div key={'s' + t} className="scrub-stop" style={{ left: pct(t) }} />
+        ))}
+        {selected?.track && selected.track.length > 1 && (
+          <div
+            className="scrub-track-span"
+            style={{ left: pct(selected.track[0].t), width: `calc(${pct(selected.track[selected.track.length - 1].t)} - ${pct(selected.track[0].t)})` }}
+          />
+        )}
         <div className="scrub-head" style={{ left: pct(shown) }} />
       </div>
 
@@ -83,6 +96,33 @@ export function Transport() {
           <span>{fmtTime(shown)}</span>
           <span className="dim"> / {fmtTime(duration, false)}</span>
           <span className="dim frame"> · f{Math.floor(shown * fps)}</span>
+        </div>
+
+        <div className="ctl-group">
+          <button
+            className={'btn' + (onStop ? ' active-red' : '')}
+            title="Add / remove a teaching stop here (Shift+S)"
+            onClick={() => useEditor.getState().toggleStop(currentTime)}
+          >
+            <Icon name="flag" size={18} /> {onStop ? 'Unstop' : 'Stop'}
+          </button>
+          <button
+            className={'btn' + (teach ? ' active' : '')}
+            title="Teach mode: playback pauses at every stop (Shift+T)"
+            onClick={() => usePlayer.getState().set({ teach: !teach })}
+          >
+            <Icon name="teach" size={18} /> Teach
+          </button>
+          {teach && (
+            <>
+              <button className="btn icon" title="Previous stop (<)" onClick={() => gotoStop(-1)}>‹</button>
+              <button className="btn icon" title="Next stop (>)" onClick={() => gotoStop(1)}>›</button>
+              <label className="toggle small-toggle" title="Also stop at every drawing's start">
+                <input type="checkbox" checked={teachAtDrawings} onChange={(e) => usePlayer.getState().set({ teachAtDrawings: e.target.checked })} />
+                <span>+ drawings</span>
+              </label>
+            </>
+          )}
         </div>
 
         <div className="ctl-group">
