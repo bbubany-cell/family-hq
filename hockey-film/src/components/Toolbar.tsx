@@ -1,0 +1,49 @@
+// Left tool rail (becomes a horizontal strip on narrow/portrait screens).
+import { useEditor } from '../store/editorStore';
+import type { Tool } from '../types';
+import { Icon } from './Icon';
+
+export const TOOLS: { id: Tool; label: string; key: string }[] = [
+  { id: 'select', label: 'Select / move', key: 'V' },
+  { id: 'hand', label: 'Pan', key: 'H' },
+  { id: 'pen', label: 'Pen', key: 'P' },
+  { id: 'line', label: 'Line', key: 'N' },
+  { id: 'arrow', label: 'Arrow', key: 'A' },
+  { id: 'curve', label: 'Curved arrow (sketch the bend)', key: 'C' },
+  { id: 'ellipse', label: 'Circle / ellipse', key: 'E' },
+  { id: 'rect', label: 'Rectangle', key: 'R' },
+  { id: 'text', label: 'Text label', key: 'T' },
+  { id: 'eraser', label: 'Eraser', key: 'X' },
+];
+
+export function Toolbar() {
+  const tool = useEditor((s) => s.tool);
+  const setTool = useEditor((s) => s.setTool);
+  const undo = useEditor((s) => s.undo);
+  const redo = useEditor((s) => s.redo);
+  const canUndo = useEditor((s) => s.past.length > 0);
+  const canRedo = useEditor((s) => s.future.length > 0);
+
+  return (
+    <nav className="toolbar">
+      {TOOLS.map((t) => (
+        <button
+          key={t.id}
+          className={'tool' + (tool === t.id ? ' active' : '')}
+          title={`${t.label} (${t.key})`}
+          aria-label={t.label}
+          onClick={() => setTool(t.id)}
+        >
+          <Icon name={t.id} />
+        </button>
+      ))}
+      <div className="toolbar-sep" />
+      <button className="tool" title="Undo (Ctrl/Cmd+Z)" disabled={!canUndo} onClick={undo}>
+        <Icon name="undo" />
+      </button>
+      <button className="tool" title="Redo (Shift+Ctrl/Cmd+Z)" disabled={!canRedo} onClick={redo}>
+        <Icon name="redo" />
+      </button>
+    </nav>
+  );
+}
