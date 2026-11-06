@@ -17,6 +17,7 @@ export function RelinkModal() {
           <br />
           <span className="dim small">for "{project.name}"</span>
         </p>
+        <p className="hint">iPad: tap <b>Choose File</b> and find it in the Files app (not Photo Library).</p>
         <div className="row-end">
           <button className="btn" onClick={relinkCancel}>Cancel</button>
           <button className="btn primary" onClick={relinkPick}>Choose file…</button>
