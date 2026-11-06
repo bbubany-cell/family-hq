@@ -27,6 +27,7 @@ import {
 import { ZONES, zoneFromBox } from '../lib/zones';
 import type { Keyframe, PathShape, Shape } from '../types';
 import { ShapeNode } from './ShapeNode';
+import { releaseVideo, setVideoSource } from '../lib/media';
 import { Icon } from './Icon';
 
 type Gesture =
@@ -77,7 +78,16 @@ export function VideoStage({ src }: { src: string }) {
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => attachVideo(videoRef.current!), []);
+  // Own the video's source: set it on mount, fully release it on unmount (see lib/media.ts).
+  useEffect(() => {
+    const el = videoRef.current!;
+    setVideoSource(el, src);
+    const detach = attachVideo(el);
+    return () => {
+      detach();
+      releaseVideo(el);
+    };
+  }, [src]);
 
   /** Keep the video covering the viewport when zoomed in; centered at 1x. */
   const clampView = useCallback(
@@ -687,7 +697,6 @@ export function VideoStage({ src }: { src: string }) {
     >
       <video
         ref={videoRef}
-        src={src}
         playsInline
         preload="auto"
         className="stage-video"

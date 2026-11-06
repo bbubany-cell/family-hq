@@ -154,6 +154,10 @@ function Videos({ projects, refresh, onOpen }: { projects: Project[] | null; ref
           <Icon name="video" /> New from video
         </button>
       </div>
+      <p className="hint pick-tip">
+        iPad tip: for full games, tap <b>Choose File</b> (Files app), not Photo Library. Photos makes the iPad convert
+        the whole video first, which is slow and can crash Safari on long games.
+      </p>
       {busy && <div className="notice">{busy}</div>}
       {error && <div className="notice error">{error}</div>}
       {projects && projects.length === 0 && (

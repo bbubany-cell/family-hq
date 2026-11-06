@@ -360,3 +360,5 @@ kbd { background: var(--bg3); border: 1px solid var(--line); border-radius: 5px;
 
 .brand-logo { border-radius: 11px; }
 .brand h1 { font-size: 22px; line-height: 1.15; }
+
+.pick-tip { margin: -4px 0 14px; max-width: 640px; }

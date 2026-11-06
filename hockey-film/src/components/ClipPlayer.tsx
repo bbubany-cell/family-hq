@@ -11,6 +11,7 @@ import { clamp, fmtTime } from '../lib/util';
 import { RATES } from '../store/playerStore';
 import { ShapeNode } from './ShapeNode';
 import { Icon } from './Icon';
+import { releaseVideo, setVideoSource } from '../lib/media';
 
 export interface ClipPlayerHandle {
   play: () => void;
@@ -63,9 +64,10 @@ export function ClipPlayer({ ref, src, project, clip, loop, teach, controls = tr
     return () => ro.disconnect();
   }, []);
 
-  // Start at the clip's first frame.
+  // Load the source and start at the clip's first frame; fully release the video on unmount.
   useEffect(() => {
     const v = videoRef.current!;
+    setVideoSource(v, src);
     const init = () => {
       v.currentTime = clip.start;
       lastT.current = clip.start;
@@ -75,7 +77,11 @@ export function ClipPlayer({ ref, src, project, clip, loop, teach, controls = tr
     if (v.readyState >= 1) init();
     else v.addEventListener('loadedmetadata', init, { once: true });
     return () => v.removeEventListener('loadedmetadata', init);
-  }, [src, clip.start, clip.end]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [src, clip.start, clip.end]);
+  useEffect(() => {
+    const v = videoRef.current;
+    return () => releaseVideo(v);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Per-frame loop while playing: publish time, enforce the clip range and teaching stops.
   useEffect(() => {
@@ -193,7 +199,6 @@ export function ClipPlayer({ ref, src, project, clip, loop, teach, controls = tr
       <div ref={boxRef} className="cp-stage">
         <video
           ref={videoRef}
-          src={src}
           playsInline
           preload="auto"
           className="stage-video"

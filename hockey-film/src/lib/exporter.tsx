@@ -10,6 +10,7 @@ import type { Project } from '../types';
 import { drawSpotlights, resolveScene, spotRows } from './scene';
 import { hasTrack, trailPoints } from './track';
 import { ShapeNode } from '../components/ShapeNode';
+import { releaseVideo } from './media';
 
 function SceneCanvas({ project, t, onStage }: { project: Project; t: number; onStage: (s: Konva.Stage | null) => void }) {
   const vw = project.video.width || 1920;
@@ -122,7 +123,7 @@ export async function exportClipVideo(o: ClipExportOptions): Promise<{ blob: Blo
   video.style.cssText = 'position:fixed;left:-10000px;top:0;width:2px;height:2px;opacity:0;';
   document.body.appendChild(video);
   const renderer = new SceneRenderer(o.project);
-  const cleanup = () => { video.pause(); video.remove(); renderer.destroy(); };
+  const cleanup = () => { releaseVideo(video); video.remove(); renderer.destroy(); };
 
   try {
     await once(video, 'loadedmetadata');
